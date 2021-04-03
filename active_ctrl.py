@@ -7,20 +7,8 @@ Created in March 2021
 """
 """
 
-from random_network.random_network import *
-# from active_net_control.active_net_dynamics import *
-
-import numpy as np , scipy as sp , random
-from scipy.spatial import Voronoi , voronoi_plot_2d
-from scipy import sparse
-import matplotlib.pyplot as plt
-from copy import deepcopy
-from math import atan2
-from shapely.geometry import Point
-from shapely.geometry.polygon import Polygon
-from time import time
-
-ti = time()
+from active_net_dynamics import *
+import numpy as np
 
 rhof , rhoi = 1 , 0.5
 s0 , gamma  = 0.2 , 0.0
@@ -28,7 +16,7 @@ s0 , gamma  = 0.2 , 0.0
 T_tot , dt  = 100 , 0.1
 N_frame     = np.min((10,np.int(T_tot/dt)))
 tau_s       = 1
-mass        = 1
+mass        = 10
 
 noisy, dvx  = 0 , 0
 
@@ -67,5 +55,3 @@ active_edges            = net.active_edges(net.illumreg,activate_full)
 # net.Viscous_Dynamics(T_tot,dt,gamma,rhoi,s0,tau_s)
 net.Inertial_Dynamics(T_tot,dt,mass,gamma,rhoi,s0,tau_s)
 
-tf = time()
-print(tf-ti)
