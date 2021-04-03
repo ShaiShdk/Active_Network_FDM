@@ -1,10 +1,6 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created in March 2021
 @author: Shahriar Shadkhoo -- Caltech
-"""
-"""
 """
 
 from active_net_dynamics import *
@@ -18,9 +14,7 @@ N_frame     = np.min((10,np.int(T_tot/dt)))
 tau_s       = 1
 mass        = 10
 
-noisy, dvx  = 0 , 0
-
-########################################## NET PARAMETERS ##########################################
+########################################## NETWORK PARAMETERS ##########################################
 
 lattice_shape   = [50 , 50]
 UnitCell_Geo    = 'Square'              #{'Square' , 'Hexagon' , 'Triangular' , 'Random'}
