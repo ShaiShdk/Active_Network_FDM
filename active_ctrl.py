@@ -7,23 +7,6 @@ Created in March 2021
 """
 """
 
-# nx_map  = int(np.sqrt(net.Nv))
-# Xmap = np.reshape(self.Xt, (nx_map,nx_map)).T
-# Ymap = np.reshape(self.Yt, (nx_map,nx_map)).T
-# net.ed_ver_sps.shape
-# net.verts
-# fsize = (5,5)
-# fig1, ax1 = plt.subplots(figsize=fsize, dpi= 100, facecolor='w', edgecolor='k')
-# ax1.plot(net.Xt, net.Vx, '.' , color='w' , markersize = 0.2 * fsize[0])
-# ax1.plot(net.Xt[net.ver_inside] , net.Vx[net.ver_inside], '.' , color='r' , markersize = 0.2 * fsize[0])
-# ax1.set_facecolor('k')
-# plt.show()
-
-# net.D2_bulk
-# net.ver_active
-# active_vertices
-# net.ver_bulk_ind
-
 # net.Vx.shape
 # net.Vel = np.stack((net.Vx.reshape((1988,)),net.Vy.reshape((1988,))),axis=-1)
 # net.Vel.shape
