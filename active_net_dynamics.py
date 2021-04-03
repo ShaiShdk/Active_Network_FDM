@@ -1,11 +1,17 @@
-# Class of Random Network with Various Geometry
+
+"""
+Created in March 2021
+@author: Shahriar Shadkhoo -- Caltech
+
+Dynamics of the Active Networks
+
+"""
 
 import numpy as np , scipy as sp , random
 from scipy.spatial import Voronoi , voronoi_plot_2d
 from scipy import sparse
 import matplotlib.pyplot as plt
 from copy import deepcopy
-from math import atan2
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 from numba import jit
@@ -13,39 +19,41 @@ from numba import jit
 class random_network:
         def __init__(self,UnitCell_Geo,lattice_shape,Global_Geometry):
 
-            self.UnitCell_Geo       = UnitCell_Geo
-            self.lattice_shape      = lattice_shape
-            self.Global_Geometry    = Global_Geometry
-            self.rounded            = []
-            self.round_coeff        = []
-            self.AR_xy              = []
-            self.AR_fr              = []
-            self.unit_cell          = [1.0 , 1.0]
-            self.act_xyt            = []
-            self.n_ver_rmv          = 0
-            self.n_edg_rmv          = 0
-            self.geo_shape          = []
-            self.lattice_dsrdr      = []
-            self.illum_ratio        = []
+            """
+                Instantiates an random network with the corresponding parameters
 
-            self.rhoPower           = []
+            """
 
-            self.verts              = []
-            self.edges              = []
-            self.regions            = []
+            self.UnitCell_Geo       = UnitCell_Geo              #"geometry of the unit cells of the lattice"
+            self.unit_cell          = [1.0 , 1.0]               #"size of the unit cells"
+            self.lattice_shape      = lattice_shape             #"size of the lattice"
+            self.Global_Geometry    = Global_Geometry           #"global shape"
+            self.rounded            = []                        #"determines if the corners of the shape are rounded"
+            self.round_coeff        = []                        #"rounding coefficient in if rounded==True"
+            self.AR_xy              = []                        #"aspect ratio y/x of the global shape"
+            self.AR_fr              = []                        #"size of the activated region over the entire network"
+            self.act_xyt            = []                        #"activity as a function of x,y and t"
+            self.n_ver_rmv          = 0                         #"number of vertices removed randomly from the network"
+            self.n_edg_rmv          = 0                         #"number of edges removed randomly from the network"
+            self.lattice_dsrdr      = []                        #"disorder of the lattice if the unit cell is chosen to be random"
+            self.illum_ratio        = []                        #"ratio of the different illumination magnitudes"
 
-            self.Dr1_sp             = []
-            self.integ1R_sp         = []
-            self.IntegPaths         = []
+            self.rhoPower           = []                        #"power of density in the stress as a function of density"
 
-            self.plot_full_positions= []
+            self.plot_full_positions= []                        #"type of plots"
             self.plot_velocity_plot = []
             self.plot_velocity_map  = []
             self.plot_density_map   = []
 
-            self.bulkV_deg   = 4*(self.UnitCell_Geo=='Square') + 6*(self.UnitCell_Geo=='Triangular')
+            self.bulkV_deg   = 4*(self.UnitCell_Geo=='Square') + 6*(self.UnitCell_Geo=='Triangular')    # coordination number of vertices in lattice
 
         def points_initial(self,unit_cell):
+
+            """
+                Points to be converted into vertices using voronoi tesselation
+
+            """
+
             l0_x = unit_cell[0]
             l0_y = unit_cell[1]
             lattice_dsrdr = self.lattice_dsrdr
@@ -57,7 +65,7 @@ class random_network:
             if UnitCell_Geo == 'Square':
                 centroid  = [[l0_x * i , l0_y * j] for i in range(nx) for j in range(ny)]
             else:
-                centroid  = [[ np.sqrt(3) * l0_x * (i + (1+(-1)**(j+1))/4 + lattice_dsrdr * (2*np.random.random()-1)) ,
+                centroid  = [[ np.sqrt(3) * l0_x * (i + (1+(-1)**(j+1))/4 + lattice_dsrdr * (2*np.random.random()-1)) , \
                               np.sqrt(3) * l0_y * (j * np.sqrt(3)/2 + lattice_dsrdr * (2*np.random.random()-1)) ] for i in range(nx) for j in range(ny)]
 
             if UnitCell_Geo == 'Triangular':
@@ -72,6 +80,11 @@ class random_network:
             return self.points
 
         def region_shape(self):
+
+            """
+                Implement the global geometry and points within the activated region
+
+            """
 
             self.points_initial(self.unit_cell)
             if self.Global_Geometry == 'Circle' or self.Global_Geometry == 'Ellipse':
@@ -130,6 +143,14 @@ class random_network:
             return self.geo_shape
 
         def net_gen(self):
+
+            """
+                Generates the network:
+
+                outputs: vertices, edges, unit cells (in terms of the list of vertices that belong to each region)
+
+            """
+
 
             vor         = Voronoi(self.points)
             verts_0     = deepcopy(vor.vertices)
@@ -301,6 +322,11 @@ class random_network:
         ################# Partial Sorting in X - Y Directions in order #################
 
         def partial_sort(self,nodes):
+
+            """
+                Partial sorting of the list of vertices in the order (x_index , y_index)
+            """
+
             nodemap = np.ones((len(nodes) , 3))
             nodemap[:,0] = np.arange(len(nodes)).reshape(len(nodes),)
             nodemap[:,1:3] = nodes
@@ -319,6 +345,12 @@ class random_network:
             return SortedNodes
 
         def active_verts(self,activate_full):
+
+            """
+                list of vertices in the active region which is identified by self.illumreg
+
+            """
+
             Nv = len(self.verts)
 
             [Xt , Yt] = np.transpose(deepcopy(self.verts)).reshape(2 , Nv)
@@ -345,6 +377,11 @@ class random_network:
 
         def active_edges(self,diff_illumreg,activate_full):
 
+            """
+                list of edges in the active region which is identified by self.illumreg
+
+            """
+
             Ne = len(self.edges)
 
             edge_active = []
@@ -370,6 +407,11 @@ class random_network:
 ######################################################################################################################################################
 
         def Inertial_Dynamics(self,T_tot,dt,mass,gamma,rhoi,s0,tau_s,N_frame=10,rhof=1):
+
+            """
+                Dynamic simulation of the inertial system: this means that instead of solving the steady state solution of velocity at each given time, the velocity field acquires a mass. When the mass is sent to infinity the contribution of inertial term vanishes and the steady state solution is retrieved.
+
+            """
 
             Nv = len(self.verts)
             Ne = len(self.edges)
@@ -481,10 +523,14 @@ class random_network:
                         plt.show()
 
                     if self.plot_velocity_plot:
-                        VxMap = np.reshape(self.Vx[self.ver_active], (nx_map,ny_map)).T
-                        VyMap = np.reshape(self.Vy[self.ver_active], (nx_map,ny_map)).T
-                        XtMap = np.reshape(self.Xt[self.ver_active], (nx_map,ny_map)).T
-                        YtMap = np.reshape(self.Yt[self.ver_active], (nx_map,ny_map)).T
+                        # VxMap = np.reshape(self.Vx[self.ver_active], (nx_map,ny_map)).T
+                        # VyMap = np.reshape(self.Vy[self.ver_active], (nx_map,ny_map)).T
+                        # XtMap = np.reshape(self.Xt[self.ver_active], (nx_map,ny_map)).T
+                        # YtMap = np.reshape(self.Yt[self.ver_active], (nx_map,ny_map)).T
+                        VxMap = np.reshape(self.Vx, (nx_map,ny_map)).T
+                        VyMap = np.reshape(self.Vy, (nx_map,ny_map)).T
+                        XtMap = np.reshape(self.Xt, (nx_map,ny_map)).T
+                        YtMap = np.reshape(self.Yt, (nx_map,ny_map)).T
                         plt.plot(XtMap[int(self.lattice_shape[0]/2),:] , VxMap[int(self.lattice_shape[0]/2),:] , '*')
                         plt.plot(YtMap[:,int(self.lattice_shape[1]/2)] , VyMap[:,int(self.lattice_shape[1]/2)] , '-')
                         plt.xlim(Xframe)
@@ -509,6 +555,11 @@ class random_network:
 ######################################################################################################################################################
 
         def Viscous_Dynamics(self,T_tot,dt,gamma,rhoi,s0,tau_s,N_frame=10,rhof=1):
+
+            """
+                Direct solution of the velocity in the steady state. The only time-dependence is buried in the continuity equation
+            """
+
 
             Nv = len(self.verts)
             Ne = len(self.edges)
@@ -638,6 +689,10 @@ class random_network:
 
         def active_force(self,stress,xhat,yhat):
 
+            """
+                calculates the force on active vertices
+            """
+
             self.Fx      = self.ed_ver_sps.T.dot(stress * xhat)
             self.Fy      = self.ed_ver_sps.T.dot(stress * yhat)
 
@@ -647,6 +702,11 @@ class random_network:
             return self.Fx_bulk , self.Fy_bulk
 
         def dndt(self,Vx,Vy,xhat,yhat,Rij,rho):
+
+            """
+                continuity equation
+            """
+
             dVx     = self.ed_ver_sps.dot(Vx)
             dVy     = self.ed_ver_sps.dot(Vy)
             divV    = dVx * xhat/Rij**1 + dVy * yhat/Rij**1
@@ -654,6 +714,11 @@ class random_network:
             return drho
 
         def edge_centers(self):
+
+            """
+                Coordinates of the center of edges
+            """
+
             endAvg  = np.abs(self.ed_ver_sps)
             edcents = endAvg.dot(self.verts)
             return edcents
