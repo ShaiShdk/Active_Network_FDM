@@ -7,8 +7,6 @@ Created in March 2021
 """
 """
 
-
-#
 # nx_map  = int(np.sqrt(net.Nv))
 # Xmap = np.reshape(self.Xt, (nx_map,nx_map)).T
 # Ymap = np.reshape(self.Yt, (nx_map,nx_map)).T
