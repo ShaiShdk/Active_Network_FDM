@@ -57,7 +57,8 @@ class random_network:
             if UnitCell_Geo == 'Square':
                 centroid  = [[l0_x * i , l0_y * j] for i in range(nx) for j in range(ny)]
             else:
-                centroid  = [[ np.sqrt(3) * l0_x * (i + (1+(-1)**(j+1))/4 + lattice_dsrdr * (2*np.random.random()-1)) , np.sqrt(3) * l0_y * (j * np.sqrt(3)/2 + lattice_dsrdr * (2*np.random.random()-1)) ] for i in range(nx) for j in range(ny)]
+                centroid  = [[ np.sqrt(3) * l0_x * (i + (1+(-1)**(j+1))/4 + lattice_dsrdr * (2*np.random.random()-1)) ,
+                              np.sqrt(3) * l0_y * (j * np.sqrt(3)/2 + lattice_dsrdr * (2*np.random.random()-1)) ] for i in range(nx) for j in range(ny)]
 
             if UnitCell_Geo == 'Triangular':
                 ver_vor0  = Voronoi(centroid).vertices
