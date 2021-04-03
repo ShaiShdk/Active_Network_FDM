@@ -1,6 +1,6 @@
 # Active_Network_Control
 
-Simulating the dynamics of Active Networks
+Simulation of Active Network Dynamics
 
 Contents:
   1. active_ctrl.py:          is a script to manipulate the input activity as a function of space and time
