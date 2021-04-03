@@ -22,9 +22,9 @@ noisy, dvx  = 0 , 0
 
 ########################################## NET PARAMETERS ##########################################
 
-lattice_shape   = [31 , 31]
+lattice_shape   = [50 , 50]
 UnitCell_Geo    = 'Square'              #{'Square' , 'Hexagon' , 'Triangular' , 'Random'}
-Global_Geometry = 'Rectangle'
+Global_Geometry = 'Rectangle'           #{'Rectangle' , "Triangle", "Hexagon", "Hexagram", "Circle", "Ellipse"}
 
 lattice_dsrdr   = 0
 if UnitCell_Geo == 'Random':
