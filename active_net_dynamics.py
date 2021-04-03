@@ -20,7 +20,7 @@ class random_network:
         def __init__(self,UnitCell_Geo,lattice_shape,Global_Geometry):
 
             """
-                Instantiates an random network with the corresponding parameters
+                Initializes an random network with the corresponding parameters
 
             """
 
@@ -50,7 +50,7 @@ class random_network:
         def points_initial(self,unit_cell):
 
             """
-                Points to be converted into vertices using voronoi tesselation
+                Points to be converted into vertices using voronoi tessellation
 
             """
 
