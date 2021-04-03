@@ -7,19 +7,6 @@ Created in March 2021
 """
 """
 
-# net.Vx.shape
-# net.Vel = np.stack((net.Vx.reshape((1988,)),net.Vy.reshape((1988,))),axis=-1)
-# net.Vel.shape
-#
-# net.Vel = np.zeros((1988,2))
-# net.Vel[:,0] = net.Vx.reshape((1988,))
-# net.Vel[:,1] = net.Vy.reshape((1988,))
-
-# import IPython
-# IPython.Application.instance().kernel.do_shutdown(True)
-
-%reset -s -f
-
 from random_network.random_network import *
 # from active_net_control.active_net_dynamics import *
 
