@@ -1,0 +1,8 @@
+__pycache__
+*.swp
+venv
+
+.env
+
+# Jupyter Notebook
+.ipynb_checkpoints
