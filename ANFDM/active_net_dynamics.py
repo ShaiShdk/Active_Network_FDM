@@ -17,6 +17,7 @@ from shapely.geometry.polygon import Polygon
 from numba import jit
 import uuid
 import os
+from tqdm import tqdm
 
 class random_network:
     def __init__(self,params):
@@ -485,7 +486,7 @@ class random_network:
         nx_map = self.lattice_shape[1] - 1
         ny_map = self.lattice_shape[0] - 1
 
-        for tt in range(round(T_tot/dt)):
+        for tt in tqdm(range(round(T_tot/dt))):
             self.tt += 1 ## if this function is called multiple times on the same class, do not reset self.tt
 
             self.Xij = self.ed_ver_sps.dot(self.Xt)
@@ -590,7 +591,7 @@ class random_network:
         nx_map  = int(np.sqrt(Nv))
         ny_map  = int(np.sqrt(len(self.ver_active)))
 
-        for tt in range(round(T_tot/dt)):
+        for tt in tqdm(range(round(T_tot/dt))):
             self.tt += 1
 
             self.Xij = self.ed_ver_sps.dot(self.Xt)
