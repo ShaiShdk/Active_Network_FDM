@@ -3,7 +3,7 @@ Created in March 2021
 @author: Shahriar Shadkhoo -- Caltech
 """
 
-from active_net_dynamics import *
+from ANFDM.active_net_dynamics import random_network
 import numpy as np
 
 rhof , rhoi = 1 , 0.5
