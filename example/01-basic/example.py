@@ -18,10 +18,11 @@ params = {
             'AR_fr'               : 1,
             'illum_ratio'         : 1,
             'rhoPower'            : 1,
-            'plot_full_positions' : 1,
-            'plot_velocity_plot'  : 0,
-            'plot_velocity_map'   : 0,
-            'plot_density_map'    : 0,
+            'plot_full_positions' : True,
+            'plot_velocity_plot'  : False,
+            'plot_velocity_map'   : True,
+            'plot_density_map'    : True,
+            'show_plots'          : False,
         }
 ########################################## NETWORK PARAMETERS ##########################################
 

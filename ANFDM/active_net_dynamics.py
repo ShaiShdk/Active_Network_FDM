@@ -15,6 +15,8 @@ from copy import deepcopy
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 from numba import jit
+import uuid
+import os
 
 class random_network:
     def __init__(self,params):
@@ -46,17 +48,25 @@ class random_network:
         self.plot_density_map   = params.get('plot_density_map')
         self.activate_full      = params.get('activate_full')
 
+        self.working_dir        = params.get('working_dir_base', '/tmp/')+'ANFDM-'+str(uuid.uuid4())
+        os.makedirs(self.working_dir)
+        print(f"Working in {self.working_dir}")
+        self.show_plots         = params.get('show_plots', True)
+        self.do_last_frame_plot = params.get('do_last_frame_plot', True)
+
         # coordination number of vertices in lattice
         if self.UnitCell_Geo=='Square':
-            self.bulkV_deg = 4 
+            self.bulkV_deg = 4
         elif self.UnitCell_Geo=='Triangular':
-            self.bulkV_deg = 6 
+            self.bulkV_deg = 6
         else:
             raise RuntimeError(f"Unrecognized unit cell geometry {self.UnitCell_Geo}, cannot initialize coordination number.")
         self.region_shape()
         self.net_gen()
         self.active_verts(self.activate_full)
         self.active_edges(self.activate_full)
+
+        self.tt = 0
 
     def points_initial(self,unit_cell):
 
@@ -454,9 +464,6 @@ class random_network:
         ################################### DYNAMICS ###################################
         ################################################################################
 
-        Xframe = [1.5 * np.min(X0) , 1.5 * np.max(X0)]
-        Yframe = [1.5 * np.min(Y0) , 1.5 * np.max(Y0)]
-
         self.ver_ed_active_sps = sparse.csr_matrix(self.ver_ed[self.ver_active])
         self.D2_active         = self.ver_ed_active_sps.dot(self.ver_ed_active_sps.T).todense()
 
@@ -475,9 +482,11 @@ class random_network:
         self.Vx_active = self.Vx[self.ver_active] + noise_x
         self.Vy_active = self.Vy[self.ver_active] + noise_y
 
-        nx_map , ny_map = self.lattice_shape[1] - 1 , self.lattice_shape[0] - 1
+        nx_map = self.lattice_shape[1] - 1
+        ny_map = self.lattice_shape[0] - 1
 
         for tt in range(round(T_tot/dt)):
+            self.tt += 1 ## if this function is called multiple times on the same class, do not reset self.tt
 
             self.Xij = self.ed_ver_sps.dot(self.Xt)
             self.Yij = self.ed_ver_sps.dot(self.Yt)
@@ -524,50 +533,11 @@ class random_network:
             self.X_size[tt]     = Xmax - Xmin
             self.Y_size[tt]     = Ymax - Ymin
 
-            fsize = (7,7)
             if tt%int((T_tot/dt)/N_frame) == 0:
-                if self.plot_full_positions:
-                    fig1, ax1 = plt.subplots(figsize=fsize, dpi= 100, facecolor='w', edgecolor='k')
-                    ax1.plot(self.Xt , self.Yt, '.' , color='w' , markersize = 0.2 * fsize[0])
-                    ax1.plot(self.Xt[self.ver_active] , self.Yt[self.ver_active], '.' , color='c' , markersize = 0.2 * fsize[0])
-                    ax1.set_facecolor('k')
-                    ax1.axis('equal')
-                    plt.xlim(Xframe)
-                    plt.ylim(Yframe)
-                    plt.show()
+                self.do_plots(X0, Y0, nx_map, ny_map)
 
-                if self.plot_velocity_plot:
-                    # VxMap = np.reshape(self.Vx[self.ver_active], (nx_map,ny_map)).T
-                    # VyMap = np.reshape(self.Vy[self.ver_active], (nx_map,ny_map)).T
-                    # XtMap = np.reshape(self.Xt[self.ver_active], (nx_map,ny_map)).T
-                    # YtMap = np.reshape(self.Yt[self.ver_active], (nx_map,ny_map)).T
-                    VxMap = np.reshape(self.Vx, (nx_map,ny_map)).T
-                    VyMap = np.reshape(self.Vy, (nx_map,ny_map)).T
-                    XtMap = np.reshape(self.Xt, (nx_map,ny_map)).T
-                    YtMap = np.reshape(self.Yt, (nx_map,ny_map)).T
-                    plt.plot(XtMap[int(self.lattice_shape[0]/2),:] , VxMap[int(self.lattice_shape[0]/2),:] , '*')
-                    plt.plot(YtMap[:,int(self.lattice_shape[1]/2)] , VyMap[:,int(self.lattice_shape[1]/2)] , '-')
-                    plt.xlim(Xframe)
-                    plt.show()
-
-                if self.plot_velocity_map:
-                    VxMap = np.reshape(self.Vx[self.ver_active], (nx_map,ny_map)).T
-                    plt.imshow(VxMap)
-                    plt.show()
-
-                    VyMap = np.reshape(self.Vy[self.ver_active], (nx_map,ny_map)).T
-                    plt.imshow(VyMap)
-                    plt.show()
-
-                if self.plot_density_map:
-                    rhoMap = np.reshape(self.ver_ed.dot(self.rho), (nx_map,ny_map)).T
-                    plt.imshow(rhoMap)
-                    plt.show()
-
-######################################################################################################################################################
-######################################################################################################################################################
-######################################################################################################################################################
-
+        if self.do_last_frame_plot:
+            self.do_plots(X0, Y0, nx_map, ny_map)
     def Viscous_Dynamics(self,T_tot,dt,gamma,rhoi,s0,tau_s,N_frame=10,rhof=1):
 
         """
@@ -602,9 +572,6 @@ class random_network:
         ################################### DYNAMICS ###################################
         ################################################################################
 
-        Xframe = [1.5 * np.min(X0) , 1.5 * np.max(X0)]
-        Yframe = [1.5 * np.min(Y0) , 1.5 * np.max(Y0)]
-
         self.ver_ed_active_sps = sparse.csr_matrix(self.ver_ed[self.ver_active])
         self.D2_active         = self.ver_ed_active_sps.dot(self.ver_ed_active_sps.T).todense()
 
@@ -624,6 +591,7 @@ class random_network:
         ny_map  = int(np.sqrt(len(self.ver_active)))
 
         for tt in range(round(T_tot/dt)):
+            self.tt += 1
 
             self.Xij = self.ed_ver_sps.dot(self.Xt)
             self.Yij = self.ed_ver_sps.dot(self.Yt)
@@ -662,44 +630,76 @@ class random_network:
             self.X_size[tt]     = Xmax - Xmin
             self.Y_size[tt]     = Ymax - Ymin
 
-            fsize = (7,7)
             if tt%int((T_tot/dt)/N_frame) == 0:
-                if self.plot_full_positions:
-                    fig1, ax1 = plt.subplots(figsize=fsize, dpi= 100, facecolor='w', edgecolor='k')
-                    ax1.plot(self.Xt , self.Yt, '.' , color='w' , markersize = 0.2 * fsize[0])
-                    ax1.plot(self.Xt[self.ver_active] , self.Yt[self.ver_active], '.' , color='c' , markersize = 0.2 * fsize[0])
-                    ax1.set_facecolor('k')
-                    ax1.axis('equal')
-                    plt.xlim(Xframe)
-                    plt.ylim(Yframe)
-                    plt.show()
-
-                if self.plot_velocity_plot:
-                    VxMap = np.reshape(self.Vx[self.ver_active], (nx_map,ny_map)).T
-                    VyMap = np.reshape(self.Vy[self.ver_active], (nx_map,ny_map)).T
-                    XtMap = np.reshape(self.Xt[self.ver_active], (nx_map,ny_map)).T
-                    YtMap = np.reshape(self.Yt[self.ver_active], (nx_map,ny_map)).T
-                    plt.plot(XtMap[int(self.lattice_shape[0]/2),:] , VxMap[int(self.lattice_shape[0]/2),:] , '*')
-                    plt.plot(YtMap[:,int(self.lattice_shape[0]/2)] , VyMap[:,int(self.lattice_shape[0]/2)] , '-')
-                    plt.xlim(Xframe)
-                    plt.show()
-
-                if self.plot_velocity_map:
-                    VxMap = np.reshape(self.Vx, (nx_map,nx_map)).T
-                    plt.imshow(VxMap)
-                    plt.show()
-
-                    VyMap = np.reshape(self.Vy, (nx_map,nx_map)).T
-                    plt.imshow(VyMap)
-                    plt.show()
-
-                if self.plot_density_map:
-                    rhoMap = np.reshape(self.ver_ed.dot(self.rho), (nx_map,nx_map)).T
-                    plt.imshow(rhoMap)
-                    plt.show()
+                self.do_plots(X0, Y0, nx_map, ny_map)
 
         self.total_time = tt
 
+        if self.do_last_frame_plot:
+            self.do_plots(X0, Y0, nx_map, ny_map)
+
+    def artifact_name(self,modifier, extension='png'):
+        return f"{self.working_dir}/{modifier}-{self.tt:04}.{extension}"
+
+    def do_plots(self, X0, Y0, nx_map, ny_map):
+        Xframe = [1.5 * np.min(X0) , 1.5 * np.max(X0)]
+        Yframe = [1.5 * np.min(Y0) , 1.5 * np.max(Y0)]
+
+        if self.plot_full_positions:
+            fscale = 7
+            fig1, ax1 = plt.subplots(figsize=(fscale, fscale), dpi= 100, facecolor='w', edgecolor='k')
+            ax1.plot(self.Xt , self.Yt, '.' , color='w' , markersize = 0.2 * fscale)
+            ax1.plot(self.Xt[self.ver_active] , self.Yt[self.ver_active], '.' , color='c' , markersize = 0.2 * fscale)
+            ax1.set_facecolor('k')
+            ax1.axis('equal')
+            plt.xlim(Xframe)
+            plt.ylim(Yframe)
+            if self.show_plots:
+                plt.show()
+            else:
+                plt.savefig(self.artifact_name("full_positions"))
+            plt.close(fig1)
+
+        if self.plot_velocity_plot:
+            raise RuntimeWarning("Currently, plot velocity doesn't work. Skipping this part")
+            #plt.figure(figsize=(7,7))
+            #VxMap = np.reshape(self.Vx[self.ver_active], (nx_map,ny_map)).T
+            #VyMap = np.reshape(self.Vy[self.ver_active], (nx_map,ny_map)).T
+            #XtMap = np.reshape(self.Xt[self.ver_active], (nx_map,ny_map)).T
+            #YtMap = np.reshape(self.Yt[self.ver_active], (nx_map,ny_map)).T
+            #plt.plot(XtMap[int(self.lattice_shape[0]/2),:] , VxMap[int(self.lattice_shape[0]/2),:] , '*')
+            #plt.plot(YtMap[:,int(self.lattice_shape[0]/2)] , VyMap[:,int(self.lattice_shape[0]/2)] , '-')
+            #plt.xlim(Xframe)
+            #if self.show_plots:
+            #    plt.show()
+            #else:
+            #    plt.savefig(self.artifact_name("velocity_plot"))
+
+        if self.plot_velocity_map:
+            fig = plt.figure(figsize=(8,4))
+            plt.subplot(1,2,1)
+            vmax = np.max([np.max(abs(v)) for v in [self.Vx, self.Vy]])
+            VxMap = np.reshape(self.Vx, (nx_map,nx_map)).T
+            plt.imshow(VxMap, cmap='RdBu', vmin = -vmax, vmax = vmax)
+
+            plt.subplot(1,2,2)
+            VyMap = np.reshape(self.Vy, (nx_map,nx_map)).T
+            plt.imshow(VyMap, cmap='RdBu', vmin = -vmax, vmax = vmax)
+            if self.show_plots:
+                plt.show()
+            else:
+                plt.savefig(self.artifact_name("velocity_map"))
+            plt.close(fig)
+
+        if self.plot_density_map:
+            fig = plt.figure(figsize=(7,7))
+            rhoMap = np.reshape(self.ver_ed.dot(self.rho), (nx_map,nx_map)).T
+            plt.imshow(rhoMap)
+            if self.show_plots:
+                plt.show()
+            else:
+                plt.savefig(self.artifact_name("density_map"))
+            plt.close(fig)
 
     def active_force(self,stress,xhat,yhat):
 
