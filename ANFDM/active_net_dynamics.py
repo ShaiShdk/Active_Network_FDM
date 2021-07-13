@@ -17,35 +17,46 @@ from shapely.geometry.polygon import Polygon
 from numba import jit
 
 class random_network:
-    def __init__(self,UnitCell_Geo,lattice_shape,Global_Geometry):
+    def __init__(self,params):
 
         """
             Initializes an random network with the corresponding parameters
 
         """
 
-        self.UnitCell_Geo       = UnitCell_Geo              #"geometry of the unit cells of the lattice"
-        self.unit_cell          = [1.0 , 1.0]               #"size of the unit cells"
-        self.lattice_shape      = lattice_shape             #"size of the lattice"
-        self.Global_Geometry    = Global_Geometry           #"global shape"
-        self.rounded            = []                        #"determines if the corners of the shape are rounded"
-        self.round_coeff        = []                        #"rounding coefficient in if rounded==True"
-        self.AR_xy              = []                        #"aspect ratio y/x of the global shape"
-        self.AR_fr              = []                        #"size of the activated region over the entire network"
-        self.act_xyt            = []                        #"activity as a function of x,y and t"
-        self.n_ver_rmv          = 0                         #"number of vertices removed randomly from the network"
-        self.n_edg_rmv          = 0                         #"number of edges removed randomly from the network"
-        self.lattice_dsrdr      = []                        #"disorder of the lattice if the unit cell is chosen to be random"
-        self.illum_ratio        = []                        #"ratio of the different illumination magnitudes"
+        self.UnitCell_Geo       = params.get('UnitCell_Geo'   )                                           # "geometry of the unit cells of the lattice"
+        self.unit_cell          = params.get('unit_cell', [1.0 , 1.0])                                    # "size of the unit cells"
+        self.lattice_shape      = params.get('lattice_shape'  )                                           # "size of the lattice"
+        self.Global_Geometry    = params.get('Global_Geometry')                                           # "global shape"
+        self.rounded            = params.get('rounded')                                                   # "determines if the corners of the shape are rounded"
+        self.round_coeff        = params.get('round_coeff')                                               # "rounding coefficient in if rounded==True"
+        self.AR_xy              = params.get('AR_xy')                                                     # "aspect ratio y/x of the global shape"
+        self.AR_fr              = params.get('AR_fr')                                                     # "size of the activated region over the entire network"
+        self.act_xyt            = params.get('act_xyt')                                                   # "activity as a function of x,y and t"
+        self.n_ver_rmv          = params.get('n_ver_rmv', 0)                                              # "number of vertices removed randomly from the network"
+        self.n_edg_rmv          = params.get('n_edg_rmv', 0)                                              # "number of edges removed randomly from the network"
+        self.lattice_dsrdr      = params.get('lattice_dsrdr', 0 if self.UnitCell_Geo == 'Random' else .2) # "disorder of the lattice if the unit cell is chosen to be random"
+        self.illum_ratio        = params.get('illum_ratio')                                               # "ratio of the different illumination magnitudes"
 
-        self.rhoPower           = []                        #"power of density in the stress as a function of density"
+        self.rhoPower           = params.get('rhoPower')                                                  # "power of density in the stress as a function of density"
 
-        self.plot_full_positions= []                        #"type of plots"
-        self.plot_velocity_plot = []
-        self.plot_velocity_map  = []
-        self.plot_density_map   = []
+        self.plot_full_positions= params.get('plot_full_positions')                                       # "type of plots"
+        self.plot_velocity_plot = params.get('plot_velocity_plot')
+        self.plot_velocity_map  = params.get('plot_velocity_map')
+        self.plot_density_map   = params.get('plot_density_map')
+        self.activate_full      = params.get('activate_full')
 
-        self.bulkV_deg   = 4*(self.UnitCell_Geo=='Square') + 6*(self.UnitCell_Geo=='Triangular')    # coordination number of vertices in lattice
+        # coordination number of vertices in lattice
+        if self.UnitCell_Geo=='Square':
+            self.bulkV_deg = 4 
+        elif self.UnitCell_Geo=='Triangular':
+            self.bulkV_deg = 6 
+        else:
+            raise RuntimeError(f"Unrecognized unit cell geometry {self.UnitCell_Geo}, cannot initialize coordination number.")
+        self.region_shape()
+        self.net_gen()
+        self.active_verts(self.activate_full)
+        self.active_edges(self.activate_full)
 
     def points_initial(self,unit_cell):
 
@@ -360,27 +371,30 @@ class random_network:
         X0 = deepcopy(Xt)
         Y0 = deepcopy(Yt)
 
-        ver_passive = [_ for _ in range(Nv) if (not self.geo_shape.contains(Point(self.verts[_].tolist())))]
+        ver_passive = [i for i in range(Nv) if (not self.geo_shape.contains(Point(self.verts[i].tolist())))]
         ver_passive = list(set(ver_passive) - set(self.ver_bndr_ind))
         ver_active  = list( set(self.ver_bulk_ind) - set(ver_passive) )
 
         if activate_full:
-            ver_active  = [_ for _ in range(Nv)]
+            veriactive  = [i for i in range(Nv)]
 
         self.ver_active  = ver_active
         self.ver_passive = ver_passive
-        self.illumreg    = [_ for _ in ver_active if Y0[_] > 0 and np.abs(X0[_]) < (3/4)*np.max(X0[ver_active])]
+        self.illumreg    = [i for i in ver_active if Y0[i] > 0 and np.abs(X0[i]) < (3/4)*np.max(X0[ver_active])]
 
         self.active_bndr = []
 
         return self.ver_active,self.ver_passive,self.illumreg
 
-    def active_edges(self,diff_illumreg,activate_full):
+    def active_edges(self,activate_full, diff_illumreg=None):
 
         """
             list of edges in the active region which is identified by self.illumreg
 
         """
+
+        if diff_illumreg is None:
+            diff_illumreg = self.illumreg
 
         Ne = len(self.edges)
 
@@ -393,10 +407,10 @@ class random_network:
         for ed in edge_active:
             if self.edges[ed][0] in diff_illumreg and self.edges[ed][1] in diff_illumreg:
                 edge_illum.append(ed)
-        edge_passive = list(set([_ for _ in range(Ne)]) - set(edge_active))
+        edge_passive = list(set([i for i in range(Ne)]) - set(edge_active))
 
         if activate_full:
-            edge_active  = [_ for _ in range(Ne)]
+            edge_active  = [i for i in range(Ne)]
 
         self.edge_active        = edge_active
         self.edge_passive       = edge_passive
