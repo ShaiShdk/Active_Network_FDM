@@ -1,3 +1,4 @@
+GitPython
 matplotlib
 numba
 numpy
