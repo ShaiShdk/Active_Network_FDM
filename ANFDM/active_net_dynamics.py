@@ -20,6 +20,8 @@ import os
 from tqdm import tqdm
 import logging
 
+logging.basicConfig(level=logging.INFO)
+
 class random_network:
     def __init__(self,params):
 
@@ -52,7 +54,7 @@ class random_network:
 
         self.working_dir        = params.get('working_dir_base', '/tmp/')+'ANFDM-'+str(uuid.uuid4())
         os.makedirs(self.working_dir)
-        print(f"Working in {self.working_dir}")
+        logging.info(f"Working in {self.working_dir}")
         self.show_plots         = params.get('show_plots', True)
         self.do_last_frame_plot = params.get('do_last_frame_plot', True)
 
@@ -670,7 +672,7 @@ class random_network:
             plt.close(fig1)
 
         if self.plot_velocity_plot:
-            raise RuntimeWarning("Currently, plot velocity doesn't work. Skipping this part")
+            logging.warning("Currently, plot velocity doesn't work. Skipping this part.")
             #plt.figure(figsize=(7,7))
             #VxMap = np.reshape(self.Vx[self.ver_active], (nx_map,ny_map)).T
             #VyMap = np.reshape(self.Vy[self.ver_active], (nx_map,ny_map)).T
