@@ -6,3 +6,6 @@ venv
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+# data folders
+data

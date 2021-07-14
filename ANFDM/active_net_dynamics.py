@@ -23,12 +23,14 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 class random_network:
-    def __init__(self,params):
+    def __init__(self,params, experiment = None):
 
         """
             Initializes an random network with the corresponding parameters
 
         """
+
+        self.sacred_experiment = experiment
 
         self.UnitCell_Geo       = params.get('UnitCell_Geo'   )                                           # "geometry of the unit cells of the lattice"
         self.unit_cell          = params.get('unit_cell', [1.0 , 1.0])                                    # "size of the unit cells"
@@ -658,6 +660,8 @@ class random_network:
         else:
             save_name = self.artifact_name(modifier)
             plt.savefig(save_name)
+            if self.sacred_experiment is not None:
+                self.sacred_experiment.add_artifact(save_name)
         plt.close(plt.gcf())
 
     def do_plots(self, X0, Y0, nx_map, ny_map):
