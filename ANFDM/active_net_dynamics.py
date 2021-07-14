@@ -66,7 +66,7 @@ class random_network:
         elif self.UnitCell_Geo=='Triangular':
             self.bulkV_deg = 6
         else:
-            raise RuntimeError(f"Unrecognized unit cell geometry {self.UnitCell_Geo}, cannot initialize coordination number.")
+            self.bulkV_deg = 3
         self.region_shape()
         self.net_gen()
         self.active_verts(self.activate_full)
@@ -695,22 +695,30 @@ class random_network:
             #    plt.savefig(self.artifact_name("velocity_plot"))
 
         if self.plot_velocity_map:
-            fig = plt.figure(figsize=(8,4))
-            plt.subplot(1,2,1)
-            vmax = np.max([np.max(abs(v)) for v in [self.Vx, self.Vy]])
-            VxMap = np.reshape(self.Vx, (nx_map,nx_map)).T
-            plt.imshow(VxMap, cmap='RdBu', vmin = -vmax, vmax = vmax)
+            if self.UnitCell_Geo == 'Square':
+                fig = plt.figure(figsize=(8,4))
+                plt.subplot(1,2,1)
+                vmax = np.max([np.max(abs(v)) for v in [self.Vx, self.Vy]])
+                VxMap = np.reshape(self.Vx, (nx_map,nx_map)).T
+                plt.imshow(VxMap, cmap='RdBu', vmin = -vmax, vmax = vmax)
 
-            plt.subplot(1,2,2)
-            VyMap = np.reshape(self.Vy, (nx_map,nx_map)).T
-            plt.imshow(VyMap, cmap='RdBu', vmin = -vmax, vmax = vmax)
-            self.show_or_save("velocity_map")
+                plt.subplot(1,2,2)
+                VyMap = np.reshape(self.Vy, (nx_map,nx_map)).T
+                plt.imshow(VyMap, cmap='RdBu', vmin = -vmax, vmax = vmax)
+                self.show_or_save("velocity_map")
+            else:
+                logging.warning("Velocity plot currently only works with Squre unit cell geometry.")
+                self.plot_velocity_map = False
 
         if self.plot_density_map:
-            fig = plt.figure(figsize=(7,7))
-            rhoMap = np.reshape(self.ver_ed.dot(self.rho), (nx_map,nx_map)).T
-            plt.imshow(rhoMap)
-            self.show_or_save("density_map")
+            if self.UnitCell_Geo == 'Square':
+                fig = plt.figure(figsize=(7,7))
+                rhoMap = np.reshape(self.ver_ed.dot(self.rho), (nx_map,nx_map)).T
+                plt.imshow(rhoMap)
+                self.show_or_save("density_map")
+            else:
+                logging.warning("Density plot currently only works with Squre unit cell geometry.")
+                self.plot_density_map = False
 
     def active_force(self,stress,xhat,yhat):
 
