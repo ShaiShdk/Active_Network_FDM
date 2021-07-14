@@ -34,10 +34,10 @@ rhof , rhoi = 1 , 0.5
 s0 , gamma  = 0.2 , 0.0
 
 T_tot , dt  = 100 , 0.1
-N_frame     = np.min((10,np.int(T_tot/dt)))
+N_frame     = 10
 tau_s       = 1
 mass        = 10
 
 # Integrate it up
-net.Inertial_Dynamics(T_tot,dt,mass,gamma,rhoi,s0,tau_s)
+net.Inertial_Dynamics(T_tot,dt,mass,gamma,rhoi,s0,tau_s, N_frame = N_frame)
 

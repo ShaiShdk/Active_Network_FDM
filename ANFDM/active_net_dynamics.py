@@ -18,6 +18,7 @@ from numba import jit
 import uuid
 import os
 from tqdm import tqdm
+import logging
 
 class random_network:
     def __init__(self,params):
@@ -437,6 +438,10 @@ class random_network:
             Dynamic simulation of the inertial system: this means that instead of solving the steady state solution of velocity at each given time, the velocity field acquires a mass. When the mass is sent to infinity the contribution of inertial term vanishes and the steady state solution is retrieved.
 
         """
+        if N_frame>int(T_tot/dt):
+            logging.warning("Trying to save more often than there are timesteps in the integration. Reducing it to save every timeframe.")
+            N_frame = int(T_tot/dt)
+            
 
         Nv = len(self.verts)
         Ne = len(self.edges)
@@ -545,6 +550,9 @@ class random_network:
             Direct solution of the velocity in the steady state. The only time-dependence is buried in the continuity equation
         """
 
+        if N_frame>int(T_tot/dt):
+            logging.warning("Trying to save more often than there are timesteps in the integration. Reducing it to save every timeframe.")
+            N_frame = int(T_tot/dt)
 
         Nv = len(self.verts)
         Ne = len(self.edges)
