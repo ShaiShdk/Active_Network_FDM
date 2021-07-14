@@ -19,6 +19,7 @@ import uuid
 import os
 from tqdm import tqdm
 import logging
+import json
 
 logging.basicConfig(level=logging.INFO)
 
@@ -436,7 +437,7 @@ class random_network:
 ######################################################################################################################################################
 ######################################################################################################################################################
 
-    def Inertial_Dynamics(self,T_tot,dt,mass,gamma,rhoi,s0,tau_s,N_frame=10,rhof=1):
+    def Inertial_Dynamics(self,T_tot,dt,mass,gamma,rhoi,s0,tau_s,N_frame=10, N_data_dump=None, do_data_dump=True, rhof=1):
 
         """
             Dynamic simulation of the inertial system: this means that instead of solving the steady state solution of velocity at each given time, the velocity field acquires a mass. When the mass is sent to infinity the contribution of inertial term vanishes and the steady state solution is retrieved.
@@ -445,6 +446,9 @@ class random_network:
         if N_frame>int(T_tot/dt):
             logging.warning("Trying to save more often than there are timesteps in the integration. Reducing it to save every timeframe.")
             N_frame = int(T_tot/dt)
+
+        if N_data_dump is None:
+            N_data_dump = N_frame
             
 
         Nv = len(self.verts)
@@ -545,10 +549,11 @@ class random_network:
 
             if tt%int((T_tot/dt)/N_frame) == 0:
                 self.do_plots(X0, Y0, nx_map, ny_map)
-
+            if do_data_dump and tt%int((T_tot/dt)/N_data_dump) == 0:
+                self.do_data_dump()
         if self.do_last_frame_plot:
             self.do_plots(X0, Y0, nx_map, ny_map)
-    def Viscous_Dynamics(self,T_tot,dt,gamma,rhoi,s0,tau_s,N_frame=10,rhof=1):
+    def Viscous_Dynamics(self,T_tot,dt,gamma,rhoi,s0,tau_s,N_frame=10, N_data_dump=None, do_data_dump=True, rhof=1):
 
         """
             Direct solution of the velocity in the steady state. The only time-dependence is buried in the continuity equation
@@ -645,11 +650,15 @@ class random_network:
 
             if tt%int((T_tot/dt)/N_frame) == 0:
                 self.do_plots(X0, Y0, nx_map, ny_map)
+            if do_data_dump and tt%int((T_tot/dt)/N_data_dump) == 0:
+                self.do_data_dump()
 
         self.total_time = tt
 
         if self.do_last_frame_plot:
             self.do_plots(X0, Y0, nx_map, ny_map)
+            if do_data_dump:
+                self.do_data_dump()
 
     def artifact_name(self,modifier, extension='png'):
         return f"{self.working_dir}/{modifier}-{self.tt:04}.{extension}"
@@ -719,6 +728,18 @@ class random_network:
             else:
                 logging.warning("Density plot currently only works with Squre unit cell geometry.")
                 self.plot_density_map = False
+    def do_data_dump(self):
+        save_name = self.artifact_name('data_dump', extension='json')
+        store_dir = dict()
+        store_dir['rho'] = self.rho.flatten().tolist()
+        store_dir['Xt'] = self.Xt.flatten().tolist()
+        store_dir['Yt'] = self.Yt.flatten().tolist()
+        store_dir['ver_active'] = self.ver_active
+        with open(save_name, 'w') as f:
+            json.dump(store_dir, f, indent=4)
+        if self.sacred_experiment is not None:
+            self.sacred_experiment.add_artifact(save_name)
+
 
     def active_force(self,stress,xhat,yhat):
 
