@@ -652,6 +652,14 @@ class random_network:
     def artifact_name(self,modifier, extension='png'):
         return f"{self.working_dir}/{modifier}-{self.tt:04}.{extension}"
 
+    def show_or_save(self, modifier):
+        if self.show_plots:
+            plt.show()
+        else:
+            save_name = self.artifact_name(modifier)
+            plt.savefig(save_name)
+        plt.close(plt.gcf())
+
     def do_plots(self, X0, Y0, nx_map, ny_map):
         Xframe = [1.5 * np.min(X0) , 1.5 * np.max(X0)]
         Yframe = [1.5 * np.min(Y0) , 1.5 * np.max(Y0)]
@@ -665,11 +673,7 @@ class random_network:
             ax1.axis('equal')
             plt.xlim(Xframe)
             plt.ylim(Yframe)
-            if self.show_plots:
-                plt.show()
-            else:
-                plt.savefig(self.artifact_name("full_positions"))
-            plt.close(fig1)
+            self.show_or_save("full_positions")
 
         if self.plot_velocity_plot:
             logging.warning("Currently, plot velocity doesn't work. Skipping this part.")
@@ -696,21 +700,13 @@ class random_network:
             plt.subplot(1,2,2)
             VyMap = np.reshape(self.Vy, (nx_map,nx_map)).T
             plt.imshow(VyMap, cmap='RdBu', vmin = -vmax, vmax = vmax)
-            if self.show_plots:
-                plt.show()
-            else:
-                plt.savefig(self.artifact_name("velocity_map"))
-            plt.close(fig)
+            self.show_or_save("velocity_map")
 
         if self.plot_density_map:
             fig = plt.figure(figsize=(7,7))
             rhoMap = np.reshape(self.ver_ed.dot(self.rho), (nx_map,nx_map)).T
             plt.imshow(rhoMap)
-            if self.show_plots:
-                plt.show()
-            else:
-                plt.savefig(self.artifact_name("density_map"))
-            plt.close(fig)
+            self.show_or_save("density_map")
 
     def active_force(self,stress,xhat,yhat):
 
