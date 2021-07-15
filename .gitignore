@@ -1,0 +1,11 @@
+__pycache__
+*.swp
+venv
+
+.env
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# data folders
+data

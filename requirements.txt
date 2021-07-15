@@ -1,0 +1,8 @@
+GitPython
+h5py
+matplotlib
+numba
+numpy
+scipy 
+shapely
+tqdm
