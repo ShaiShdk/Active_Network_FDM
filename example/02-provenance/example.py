@@ -15,7 +15,7 @@ ex.dependencies.add(sacred.dependencies.PackageDependency("ANFDM", ANFDM_VERSION
 @ex.config
 def cfg():
     # Geometry parameters
-    UnitCell_Geo        = 'Triangular'#{'Square''Hexagon''Triangular''Random'}
+    UnitCell_Geo        = 'Square'#{'Square''Hexagon''Triangular''Random'}
     lattice_shape       = [50,50]
     Global_Geometry     = 'Hexagon'#{'Rectangle'"Triangle""Hexagon""Hexagram""Circle""Ellipse"}
     lattice_dsrdr       = 0

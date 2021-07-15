@@ -734,19 +734,19 @@ class random_network:
                 plt.subplot(1,3,2)
                 VMap = np.reshape(VMap, (nx_map,nx_map)).T
                 plt.title(r'$|v|$')
-                pcm = plt.pcolormesh(self.X_plot, self.Y_plot, VMap, cmap='RdBu', vmin = -vmax, vmax = vmax)
+                pcm = plt.pcolormesh(self.X_plot, self.Y_plot, VMap, cmap='RdBu', vmin = -vmax, vmax = vmax, shading='nearest')
 
                 # v_x
                 plt.subplot(1,3,1)
                 plt.title(r'$v_x$')
                 VxMap = np.reshape(self.Vx, (nx_map,nx_map)).T
-                plt.pcolormesh(self.X_plot, self.Y_plot, VxMap, cmap='RdBu', vmin = -vmax, vmax = vmax)
+                plt.pcolormesh(self.X_plot, self.Y_plot, VxMap, cmap='RdBu', vmin = -vmax, vmax = vmax, shading='nearest')
 
                 # v_y
                 plt.subplot(1,3,3)
                 VyMap = np.reshape(self.Vy, (nx_map,nx_map)).T
                 plt.title(r'$v_y$')
-                plt.pcolormesh(self.X_plot, self.Y_plot, VyMap, cmap='RdBu', vmin = -vmax, vmax = vmax)
+                plt.pcolormesh(self.X_plot, self.Y_plot, VyMap, cmap='RdBu', vmin = -vmax, vmax = vmax, shading='nearest')
 
                 # Add colorbar without destroying layout
                 fig.subplots_adjust(left=0.05, right=.88)
@@ -768,7 +768,7 @@ class random_network:
                 vmax = np.max(abs(rhoMap))
                 pcm = plt.pcolormesh(self.X_plot, self.Y_plot, rhoMap, 
                         norm = colors.SymLogNorm(linthresh=1e-2, vmin = -vmax, vmax = vmax, base=10),
-                        cmap='RdBu')
+                        cmap='RdBu', shading='nearest')
                 ax = plt.gca()
                 fig.subplots_adjust(left=0.05, right=.80)
                 cax = fig.add_axes([.85, .20, .02,.6])
