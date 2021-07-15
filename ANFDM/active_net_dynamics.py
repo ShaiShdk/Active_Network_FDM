@@ -20,6 +20,7 @@ import os
 from tqdm import tqdm
 import logging
 import json
+import h5py
 
 logging.basicConfig(level=logging.INFO)
 
@@ -60,6 +61,7 @@ class random_network:
         logging.info(f"Working in {self.working_dir}")
         self.show_plots         = params.get('show_plots', True)
         self.do_last_frame_plot = params.get('do_last_frame_plot', True)
+        self.dump_type          = params.get('dump_type', 'json')
 
         # coordination number of vertices in lattice
         if self.UnitCell_Geo=='Square':
@@ -660,8 +662,11 @@ class random_network:
             if do_data_dump:
                 self.do_data_dump()
 
-    def artifact_name(self,modifier, extension='png'):
-        return f"{self.working_dir}/{modifier}-{self.tt:04}.{extension}"
+    def artifact_name(self,modifier, extension='png', do_running_index=True):
+        if do_running_index:
+            return f"{self.working_dir}/{modifier}-{self.tt:04}.{extension}"
+        else:
+            return f"{self.working_dir}/{modifier}.{extension}"
 
     def show_or_save(self, modifier):
         if self.show_plots:
@@ -729,14 +734,36 @@ class random_network:
                 logging.warning("Density plot currently only works with Squre unit cell geometry.")
                 self.plot_density_map = False
     def do_data_dump(self):
-        save_name = self.artifact_name('data_dump', extension='json')
+        if self.dump_type is None:
+            pass # Setting dump type to None will stop any data dump to occur
+        elif self.dump_type.lower()=='json':
+            dd = self.get_dump_dir()
+            self.do_json_data_dump(dd)
+        elif self.dump_type.lower()=='h5':
+            dd = self.get_dump_dir()
+            self.do_h5_data_dump(dd)
+        else:
+            raise RuntimeWarning(f"Unrecognized data dump type: {self.dump_type}... Valid options are 'json', 'h5', or None")
+    def get_dump_dir(self):
         store_dir = dict()
         store_dir['rho'] = self.rho.flatten().tolist()
         store_dir['Xt'] = self.Xt.flatten().tolist()
         store_dir['Yt'] = self.Yt.flatten().tolist()
         store_dir['ver_active'] = self.ver_active
+        return store_dir
+    def do_json_data_dump(self, store_dir):
+        save_name = self.artifact_name('data_dump', extension='json')
         with open(save_name, 'w') as f:
             json.dump(store_dir, f, indent=4)
+        if self.sacred_experiment is not None:
+            self.sacred_experiment.add_artifact(save_name)
+    def do_h5_data_dump(self, store_dir):
+        save_name = self.artifact_name('data_dump', extension='h5', do_running_index=False)
+        with h5py.File(save_name, 'a') as f:
+            basedir = f'iteration={self.tt}'
+            f.create_group(basedir)
+            for k,v in store_dir.items():
+                f.create_dataset(f"{basedir}/{k}", data=v)
         if self.sacred_experiment is not None:
             self.sacred_experiment.add_artifact(save_name)
 

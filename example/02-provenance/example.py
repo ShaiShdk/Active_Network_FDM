@@ -39,7 +39,8 @@ def cfg():
     N_frame     = 25
     tau_s       = 1
     mass        = 10
-    integration_type = 'viscous'
+
+    dump_type   = 'json' # Can be any of 'json', 'h5', or None
 
 
 @ex.automain
