@@ -11,6 +11,7 @@ import numpy as np , scipy as sp , random
 from scipy.spatial import Voronoi , voronoi_plot_2d
 from scipy import sparse
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 from copy import deepcopy
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
@@ -74,6 +75,7 @@ class random_network:
         self.net_gen()
         self.active_verts(self.activate_full)
         self.active_edges(self.activate_full)
+        self.init_plot_ranges()
 
         self.tt = 0
 
@@ -171,6 +173,19 @@ class random_network:
             self.geo_shape = self.geo_shape.buffer(self.round_coeff)
 
         return self.geo_shape
+
+    def init_plot_ranges(self):
+        nx = self.lattice_shape[1] - 1 ## not sure why they are inverted...
+        ny = self.lattice_shape[0] - 1 
+        x_min = np.min(self.points[:,0])
+        x_max = np.max(self.points[:,0])
+        y_min = np.min(self.points[:,1])
+        y_max = np.max(self.points[:,1])
+        X = np.linspace(x_min, x_max, num=nx+1)
+        Y = np.linspace(y_min, y_max, num=ny+1)
+        self.X_plot = (X[:-1]+X[1:])/2
+        self.Y_plot = (Y[:-1]+Y[1:])/2
+
 
     def net_gen(self):
 
@@ -710,16 +725,38 @@ class random_network:
 
         if self.plot_velocity_map:
             if self.UnitCell_Geo == 'Square':
-                fig = plt.figure(figsize=(8,4))
-                plt.subplot(1,2,1)
-                vmax = np.max([np.max(abs(v)) for v in [self.Vx, self.Vy]])
-                VxMap = np.reshape(self.Vx, (nx_map,nx_map)).T
-                plt.imshow(VxMap, cmap='RdBu', vmin = -vmax, vmax = vmax)
+                # General setup
+                fig = plt.figure(figsize=(12,4))
+                VMap = np.sqrt(self.Vx**2+self.Vy**2)
+                vmax = np.max(VMap)
 
-                plt.subplot(1,2,2)
+                # |v|
+                plt.subplot(1,3,2)
+                VMap = np.reshape(VMap, (nx_map,nx_map)).T
+                plt.title(r'$|v|$')
+                pcm = plt.pcolormesh(self.X_plot, self.Y_plot, VMap, cmap='RdBu', vmin = -vmax, vmax = vmax)
+
+                # v_x
+                plt.subplot(1,3,1)
+                plt.title(r'$v_x$')
+                VxMap = np.reshape(self.Vx, (nx_map,nx_map)).T
+                plt.pcolormesh(self.X_plot, self.Y_plot, VxMap, cmap='RdBu', vmin = -vmax, vmax = vmax)
+
+                # v_y
+                plt.subplot(1,3,3)
                 VyMap = np.reshape(self.Vy, (nx_map,nx_map)).T
-                plt.imshow(VyMap, cmap='RdBu', vmin = -vmax, vmax = vmax)
+                plt.title(r'$v_y$')
+                plt.pcolormesh(self.X_plot, self.Y_plot, VyMap, cmap='RdBu', vmin = -vmax, vmax = vmax)
+
+                # Add colorbar without destroying layout
+                fig.subplots_adjust(left=0.05, right=.88)
+                cax = fig.add_axes([.90, .20, .02,.6])
+                plt.colorbar(pcm, cax = cax).set_label(r'$v$ (a.u.)')
+
+                ## Show plot
                 self.show_or_save("velocity_map")
+
+
             else:
                 logging.warning("Velocity plot currently only works with Squre unit cell geometry.")
                 self.plot_velocity_map = False
@@ -727,8 +764,16 @@ class random_network:
         if self.plot_density_map:
             if self.UnitCell_Geo == 'Square':
                 fig = plt.figure(figsize=(7,7))
-                rhoMap = np.reshape(self.ver_ed.dot(self.rho), (nx_map,nx_map)).T
-                plt.imshow(rhoMap)
+                rhoMap = np.reshape(self.ver_ed.dot(self.rho), (nx_map,ny_map)).T
+                vmax = np.max(abs(rhoMap))
+                pcm = plt.pcolormesh(self.X_plot, self.Y_plot, rhoMap, 
+                        norm = colors.SymLogNorm(linthresh=1e-2, vmin = -vmax, vmax = vmax, base=10),
+                        cmap='RdBu')
+                ax = plt.gca()
+                fig.subplots_adjust(left=0.05, right=.80)
+                cax = fig.add_axes([.85, .20, .02,.6])
+                plt.colorbar(pcm, cax=cax).set_label(r'$\rho$ (a.u.)')
+                ax.set_aspect('equal')
                 self.show_or_save("density_map")
             else:
                 logging.warning("Density plot currently only works with Squre unit cell geometry.")
